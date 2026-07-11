@@ -84,13 +84,13 @@ _graph = None
 
 
 def _build_graph():
-    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_groq import ChatGroq
 
-    api_key = os.getenv("GOOGLE_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="GOOGLE_API_KEY is not set on the server.")
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set on the server.")
 
-    model = ChatGoogleGenerativeAI(model="gemini-2.5-pro", api_key=api_key).bind_tools(TOOLS)
+    model = ChatGroq(model="openai/gpt-oss-120b", api_key=api_key).bind_tools(TOOLS)
     tool_node = ToolNode(TOOLS)
 
     def call_model(state: State):
