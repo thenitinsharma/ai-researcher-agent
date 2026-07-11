@@ -4,7 +4,7 @@ import requests
 
 def get_arxiv_data(topic: str, max_results: int = 5) -> dict:
     query = "+".join(topic.lower().split())
-    for char in list("!@#$%^&*()[]{};:,./<>?\\|`~-=_+"):
+    for char in list("!@#$%^&*()[]{};:,./<>?\\|`~-=_"):
         if char in query:
             print(f"Invalid character '{char}' in topic: {query}. Please remove it and try again.")
             raise ValueError(f"Cannot have character '{char}' in topic: {query}.")
