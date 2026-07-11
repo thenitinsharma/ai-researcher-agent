@@ -1,0 +1,76 @@
+diff --git a/ai-researcher-frontend/components/ChatMessageItem.tsx b/ai-researcher-frontend/components/ChatMessageItem.tsx
+index bc49c13..9524ca3 100644
+--- a/ai-researcher-frontend/components/ChatMessageItem.tsx
++++ b/ai-researcher-frontend/components/ChatMessageItem.tsx
+@@ -1,4 +1,6 @@
+ import type { ChatMessage } from "@/lib/types";
++import ReactMarkdown from "react-markdown";
++import remarkGfm from "remark-gfm";
+ import ToolResultBlock from "./ToolResultBlock";
+ 
+ export default function ChatMessageItem({ message }: { message: ChatMessage }) {
+@@ -17,7 +19,28 @@ export default function ChatMessageItem({ message }: { message: ChatMessage }) {
+             Research Agent
+           </span>
+         )}
+-        <p className="whitespace-pre-wrap">{message.content}</p>
++
++        {isUser ? (
++          <p className="whitespace-pre-wrap">{message.content}</p>
++        ) : (
++          <div
++            className="prose prose-sm max-w-none
++              prose-headings:font-serif prose-headings:text-ink
++              prose-p:text-ink prose-p:leading-relaxed
++              prose-strong:text-ink prose-strong:font-semibold
++              prose-a:text-teal-deep prose-a:underline prose-a:underline-offset-2 hover:prose-a:text-teal
++              prose-li:text-ink prose-li:marker:text-inkSoft
++              prose-code:text-rust prose-code:before:content-none prose-code:after:content-none
++              prose-pre:bg-paperDim prose-pre:text-ink
++              prose-blockquote:border-l-teal-soft prose-blockquote:text-inkSoft
++              prose-hr:border-line
++              prose-table:text-sm prose-th:text-ink prose-th:border-line prose-td:border-line prose-thead:border-line"
++          >
++            <ReactMarkdown remarkPlugins={[remarkGfm]}>
++              {message.content}
++            </ReactMarkdown>
++          </div>
++        )}
+ 
+         {/* Tool results the agent decided to produce this turn — rendered
+             inline, never triggered directly by the user. */}
+diff --git a/ai-researcher-frontend/package.json b/ai-researcher-frontend/package.json
+index 10e5609..1330385 100644
+--- a/ai-researcher-frontend/package.json
++++ b/ai-researcher-frontend/package.json
+@@ -12,7 +12,9 @@
+     "next": "14.2.35",
+     "react": "18.3.1",
+     "react-dom": "18.3.1",
+-    "lucide-react": "0.400.0"
++    "lucide-react": "0.400.0",
++    "react-markdown": "^9.0.1",
++    "remark-gfm": "^4.0.0"
+   },
+   "devDependencies": {
+     "typescript": "5.5.4",
+@@ -20,6 +22,7 @@
+     "@types/react": "18.3.3",
+     "@types/react-dom": "18.3.0",
+     "tailwindcss": "3.4.6",
++    "@tailwindcss/typography": "^0.5.15",
+     "postcss": "8.4.39",
+     "autoprefixer": "10.4.19"
+   }
+diff --git a/ai-researcher-frontend/tailwind.config.ts b/ai-researcher-frontend/tailwind.config.ts
+index 4e455a5..e7a3651 100644
+--- a/ai-researcher-frontend/tailwind.config.ts
++++ b/ai-researcher-frontend/tailwind.config.ts
+@@ -36,6 +36,6 @@ const config: Config = {
+       },
+     },
+   },
+-  plugins: [],
++  plugins: [require("@tailwindcss/typography")],
+ };
+ export default config;
