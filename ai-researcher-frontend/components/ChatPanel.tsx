@@ -65,12 +65,21 @@ export default function ChatPanel() {
     } catch (err) {
       setStatus("error");
       const detail = err instanceof Error ? err.message : String(err);
+      const isRateLimit = /rate_limit_exceeded|tokens per minute|\b413\b/i.test(detail);
+
+      const content = isRateLimit
+        ? "⚠️ **This project runs on a shared free-tier Groq API key, which just hit its rate limit.**\n\n" +
+          "Please add your own free Groq API key using the **Settings** button (top right) so your " +
+          "messages use your own quota instead. You can grab one at [console.groq.com/keys](https://console.groq.com/keys).\n\n" +
+          `> Technical details: ${detail}`
+        : `I couldn't reach the research backend just now.\n\n**Details:** ${detail}`;
+
       setMessages((m) => [
         ...m,
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: `I couldn't reach the research backend just now.\n\n**Details:** ${detail}`,
+          content,
           createdAt: Date.now(),
         },
       ]);
