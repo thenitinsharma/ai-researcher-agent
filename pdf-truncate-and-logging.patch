@@ -1,0 +1,47 @@
+diff --git a/ai-researcher-backend/read_pdf.py b/ai-researcher-backend/read_pdf.py
+index 52de474..4721c82 100644
+--- a/ai-researcher-backend/read_pdf.py
++++ b/ai-researcher-backend/read_pdf.py
+@@ -3,6 +3,14 @@ from langchain_core.tools import tool
+ import io
+ import requests
+ 
++# Cap how much extracted text we hand back to the model. Full papers can run
++# 10k+ tokens; since that text gets persisted in conversation history by the
++# checkpointer, an uncapped read here was blowing past the model's context /
++# rate limits on the very next turn. This keeps enough for the agent to find
++# methodology, results, and future-work sections while staying well within
++# limits.
++MAX_PDF_CHARS = 12000
++
+ 
+ def extract_pdf_text(pdf_url: str) -> str:
+     """Raw extractor used by both the API route and the agent tool below."""
+@@ -20,7 +28,13 @@ def extract_pdf_text(pdf_url: str) -> str:
+ 
+         # FIX: original returned text.split() (a list of individual words), which
+         # throws away all structure and breaks any downstream reading of the text.
+-        return text.strip()
++        text = text.strip()
++        if len(text) > MAX_PDF_CHARS:
++            text = (
++                text[:MAX_PDF_CHARS]
++                + f"\n\n[...truncated — original was {len(text)} characters...]"
++            )
++        return text
+     except Exception as e:
+         print(f"An error occurred while reading the PDF from URL: {e}")
+         raise ValueError(f"Failed to read PDF from URL: {pdf_url}. Error: {e}")
+diff --git a/ai-researcher-backend/main.py b/ai-researcher-backend/main.py
+index 4e65655..01685d1 100644
+--- a/ai-researcher-backend/main.py
++++ b/ai-researcher-backend/main.py
+@@ -183,6 +183,8 @@ def chat(body: ChatBody):
+     try:
+         result = graph.invoke({"messages": messages}, config)
+     except Exception as e:
++        import traceback
++        traceback.print_exc()
+         raise HTTPException(status_code=500, detail=f"Agent error: {e}")
+ 
+     reply, tool_calls = _extract_turn(result["messages"], body.message)
