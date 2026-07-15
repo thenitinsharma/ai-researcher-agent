@@ -80,15 +80,20 @@ render_latex_to_pdf tool. When you cite papers, always attach their PDF links.""
 
 TOOLS = [arxiv_search, read_pdf_from_url, render_latex_to_pdf]
 
-_graph = None
+# Shared across every compiled graph (server-key or BYO-key) so conversation
+# history for a given thread_id is visible no matter which key served which
+# turn — only the model client differs per key, not the conversation state.
+_checkpointer = MemorySaver()
+
+# Compiled graphs are cheap to keep around and avoid rebuilding a ChatGroq
+# client on every single request. Keyed by the Groq API key in use (or the
+# sentinel below for the server's own key from the environment).
+_SERVER_KEY_SENTINEL = "__server__"
+_graphs: dict[str, object] = {}
 
 
-def _build_graph():
+def _build_graph(api_key: str):
     from langchain_groq import ChatGroq
-
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set on the server.")
 
     model = ChatGroq(model="openai/gpt-oss-120b", api_key=api_key).bind_tools(TOOLS)
     tool_node = ToolNode(TOOLS)
@@ -110,20 +115,38 @@ def _build_graph():
     workflow.add_conditional_edges("agent", should_continue)
     workflow.add_edge("tools", "agent")
 
-    checkpointer = MemorySaver()
-    return workflow.compile(checkpointer=checkpointer)
+    return workflow.compile(checkpointer=_checkpointer)
 
 
-def _get_graph():
-    global _graph
-    if _graph is None:
-        _graph = _build_graph()
-    return _graph
+def _get_graph(user_api_key: str | None = None):
+    if user_api_key:
+        # Don't let a user-supplied key evict/collide with the server's own
+        # cached graph, and don't cache indefinitely across many distinct
+        # visitor keys either — cap how many we keep around.
+        if user_api_key not in _graphs:
+            if len(_graphs) > 50:
+                _graphs.clear()
+            _graphs[user_api_key] = _build_graph(user_api_key)
+        return _graphs[user_api_key]
+
+    if _SERVER_KEY_SENTINEL not in _graphs:
+        server_key = os.getenv("GROQ_API_KEY")
+        if not server_key:
+            raise HTTPException(
+                status_code=500,
+                detail="GROQ_API_KEY is not set on the server, and no personal API key was provided.",
+            )
+        _graphs[_SERVER_KEY_SENTINEL] = _build_graph(server_key)
+    return _graphs[_SERVER_KEY_SENTINEL]
 
 
 class ChatBody(BaseModel):
     thread_id: str = "default"
     message: str
+    # Optional: a visitor's own Groq API key, used instead of the server's.
+    # Lets people avoid the shared server key's free-tier rate limit (see
+    # https://console.groq.com/settings/billing for higher tiers).
+    groq_api_key: str | None = None
 
 
 def _extract_turn(all_messages: list, sent_human_content: str):
@@ -166,7 +189,8 @@ def _extract_turn(all_messages: list, sent_human_content: str):
 
 @app.post("/api/chat")
 def chat(body: ChatBody):
-    graph = _get_graph()
+    user_key = (body.groq_api_key or "").strip() or None
+    graph = _get_graph(user_key)
     config = {"configurable": {"thread_id": body.thread_id}}
 
     # Only prepend the system prompt on a thread's first turn — the checkpointer
@@ -185,7 +209,15 @@ def chat(body: ChatBody):
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Agent error: {e}")
+        detail = f"Agent error: {e}"
+        if "rate_limit_exceeded" in str(e) or "413" in str(e):
+            detail += (
+                "\n\nThis usually means the shared server API key hit Groq's free-tier "
+                "rate limit. Add your own Groq API key in Settings (top right) to use "
+                "your own quota, or upgrade to a paid tier at "
+                "https://console.groq.com/settings/billing."
+            )
+        raise HTTPException(status_code=500, detail=detail)
 
     reply, tool_calls = _extract_turn(result["messages"], body.message)
     return {"reply": reply, "toolCalls": tool_calls}

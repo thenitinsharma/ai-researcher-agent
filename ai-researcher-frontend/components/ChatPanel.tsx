@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Send } from "lucide-react";
 import { sendChatMessage } from "@/lib/api";
+import { getGroqApiKey } from "@/lib/groqKey";
 import type { ChatMessage } from "@/lib/types";
 import ChatMessageItem from "./ChatMessageItem";
 import StatusBadge, { Status } from "./StatusBadge";
@@ -45,7 +46,11 @@ export default function ChatPanel() {
     setInput("");
     setStatus("loading");
     try {
-      const { reply, toolCalls } = await sendChatMessage(content, threadIdRef.current);
+      const { reply, toolCalls } = await sendChatMessage(
+        content,
+        threadIdRef.current,
+        getGroqApiKey()
+      );
       setMessages((m) => [
         ...m,
         {

@@ -1,4 +1,5 @@
 import { FlaskConical } from "lucide-react";
+import ApiKeySettings from "./ApiKeySettings";
 
 export default function Header() {
   return (
@@ -17,14 +18,17 @@ export default function Header() {
             </p>
           </div>
         </div>
-        <a
-          href="https://github.com/thenitinsharma/ai-research-assistant"
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-full border border-ink px-3 py-1.5 font-mono text-xs text-ink transition hover:bg-ink hover:text-paper sm:px-4 sm:text-sm"
-        >
-          Source
-        </a>
+        <div className="flex items-center gap-2">
+          <ApiKeySettings />
+          <a
+            href="https://github.com/thenitinsharma/ai-research-assistant"
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full border border-ink px-3 py-1.5 font-mono text-xs text-ink transition hover:bg-ink hover:text-paper sm:px-4 sm:text-sm"
+          >
+            Source
+          </a>
+        </div>
       </div>
     </header>
   );

@@ -31,10 +31,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
  */
 export function sendChatMessage(
   message: string,
-  threadId: string
+  threadId: string,
+  groqApiKey?: string | null
 ): Promise<{ reply: string; toolCalls: ToolCallResult[] }> {
   return request<{ reply: string; toolCalls: ToolCallResult[] }>("/api/chat", {
     method: "POST",
-    body: JSON.stringify({ thread_id: threadId, message }),
+    body: JSON.stringify({
+      thread_id: threadId,
+      message,
+      groq_api_key: groqApiKey || undefined,
+    }),
   });
 }

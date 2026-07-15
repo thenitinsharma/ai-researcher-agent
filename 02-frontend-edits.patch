@@ -1,0 +1,83 @@
+diff --git a/ai-researcher-frontend/components/ChatPanel.tsx b/ai-researcher-frontend/components/ChatPanel.tsx
+index dd1b987..3bb29e5 100644
+--- a/ai-researcher-frontend/components/ChatPanel.tsx
++++ b/ai-researcher-frontend/components/ChatPanel.tsx
+@@ -3,6 +3,7 @@
+ import { useRef, useState, useEffect } from "react";
+ import { Send } from "lucide-react";
+ import { sendChatMessage } from "@/lib/api";
++import { getGroqApiKey } from "@/lib/groqKey";
+ import type { ChatMessage } from "@/lib/types";
+ import ChatMessageItem from "./ChatMessageItem";
+ import StatusBadge, { Status } from "./StatusBadge";
+@@ -45,7 +46,11 @@ export default function ChatPanel() {
+     setInput("");
+     setStatus("loading");
+     try {
+-      const { reply, toolCalls } = await sendChatMessage(content, threadIdRef.current);
++      const { reply, toolCalls } = await sendChatMessage(
++        content,
++        threadIdRef.current,
++        getGroqApiKey()
++      );
+       setMessages((m) => [
+         ...m,
+         {
+diff --git a/ai-researcher-frontend/components/Header.tsx b/ai-researcher-frontend/components/Header.tsx
+index 897e2eb..68d3d6c 100644
+--- a/ai-researcher-frontend/components/Header.tsx
++++ b/ai-researcher-frontend/components/Header.tsx
+@@ -1,4 +1,5 @@
+ import { FlaskConical } from "lucide-react";
++import ApiKeySettings from "./ApiKeySettings";
+ 
+ export default function Header() {
+   return (
+@@ -17,14 +18,17 @@ export default function Header() {
+             </p>
+           </div>
+         </div>
+-        <a
+-          href="https://github.com/thenitinsharma/ai-research-assistant"
+-          target="_blank"
+-          rel="noreferrer"
+-          className="rounded-full border border-ink px-3 py-1.5 font-mono text-xs text-ink transition hover:bg-ink hover:text-paper sm:px-4 sm:text-sm"
+-        >
+-          Source
+-        </a>
++        <div className="flex items-center gap-2">
++          <ApiKeySettings />
++          <a
++            href="https://github.com/thenitinsharma/ai-research-assistant"
++            target="_blank"
++            rel="noreferrer"
++            className="rounded-full border border-ink px-3 py-1.5 font-mono text-xs text-ink transition hover:bg-ink hover:text-paper sm:px-4 sm:text-sm"
++          >
++            Source
++          </a>
++        </div>
+       </div>
+     </header>
+   );
+diff --git a/ai-researcher-frontend/lib/api.ts b/ai-researcher-frontend/lib/api.ts
+index 401d877..21b4415 100644
+--- a/ai-researcher-frontend/lib/api.ts
++++ b/ai-researcher-frontend/lib/api.ts
+@@ -31,10 +31,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  */
+ export function sendChatMessage(
+   message: string,
+-  threadId: string
++  threadId: string,
++  groqApiKey?: string | null
+ ): Promise<{ reply: string; toolCalls: ToolCallResult[] }> {
+   return request<{ reply: string; toolCalls: ToolCallResult[] }>("/api/chat", {
+     method: "POST",
+-    body: JSON.stringify({ thread_id: threadId, message }),
++    body: JSON.stringify({
++      thread_id: threadId,
++      message,
++      groq_api_key: groqApiKey || undefined,
++    }),
+   });
+ }
