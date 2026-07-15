@@ -183,6 +183,8 @@ def chat(body: ChatBody):
     try:
         result = graph.invoke({"messages": messages}, config)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Agent error: {e}")
 
     reply, tool_calls = _extract_turn(result["messages"], body.message)

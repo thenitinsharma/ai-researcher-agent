@@ -3,6 +3,14 @@ from langchain_core.tools import tool
 import io
 import requests
 
+# Cap how much extracted text we hand back to the model. Full papers can run
+# 10k+ tokens; since that text gets persisted in conversation history by the
+# checkpointer, an uncapped read here was blowing past the model's context /
+# rate limits on the very next turn. This keeps enough for the agent to find
+# methodology, results, and future-work sections while staying well within
+# limits.
+MAX_PDF_CHARS = 12000
+
 
 def extract_pdf_text(pdf_url: str) -> str:
     """Raw extractor used by both the API route and the agent tool below."""
@@ -20,7 +28,13 @@ def extract_pdf_text(pdf_url: str) -> str:
 
         # FIX: original returned text.split() (a list of individual words), which
         # throws away all structure and breaks any downstream reading of the text.
-        return text.strip()
+        text = text.strip()
+        if len(text) > MAX_PDF_CHARS:
+            text = (
+                text[:MAX_PDF_CHARS]
+                + f"\n\n[...truncated — original was {len(text)} characters...]"
+            )
+        return text
     except Exception as e:
         print(f"An error occurred while reading the PDF from URL: {e}")
         raise ValueError(f"Failed to read PDF from URL: {pdf_url}. Error: {e}")
