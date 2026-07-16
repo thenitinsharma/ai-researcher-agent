@@ -6,7 +6,7 @@ and drafts a full LaTeX-rendered paper — all as tool calls the agent decides
 to make on its own. There's no manual "search" or "generate PDF" button; the
 model chooses when to use each tool as the conversation unfolds.
 
-**Live app:** add your deployed Vercel/Render URLs here once live.
+**Live app:** https://ai-researcher-agent-brown.vercel.app
 
 ```
 You: write me a research paper on prompt engineering, check latest papers
