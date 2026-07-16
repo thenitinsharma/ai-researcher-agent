@@ -21,7 +21,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <ApiKeySettings />
           <a
-            href="https://github.com/thenitinsharma/ai-research-assistant"
+            href="https://github.com/thenitinsharma/ai-researcher-agent"
             target="_blank"
             rel="noreferrer"
             className="rounded-full border border-ink px-3 py-1.5 font-mono text-xs text-ink transition hover:bg-ink hover:text-paper sm:px-4 sm:text-sm"
