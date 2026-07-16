@@ -28,7 +28,7 @@ export default function Home() {
         <footer className="mt-10 border-t border-dashed border-line pt-6 text-xs text-inkSoft">
           <p>
             Backed by a LangGraph agent (StateGraph + ToolNode + bind_tools) over
-            Gemini 2.5 Pro, with tools for arXiv search, PDF extraction, and
+            Groq API, with tools for arXiv search, PDF extraction, and
             Tectonic LaTeX rendering. Conversation memory is kept server-side per
             session via a LangGraph checkpointer.
           </p>
